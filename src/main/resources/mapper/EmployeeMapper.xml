@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.EmployeeMapper">
+	<select id="findEmployee" resultMap="Employees">
+	SELECT 
+		emp.employee_id AS employee_id,
+		emp.name AS name,
+		emp.join_date AS join_date,
+		emp.job_category_id AS job_category_id,
+		auth.password AS password,
+		auth.mailaddress AS mailaddress,
+		auth.authority_id AS authority_id
+	FROM
+		employees AS emp
+	INNER JOIN
+		auth_info AS auth
+	ON
+		emp.employee_id = auth.employee_id
+	WHERE
+		auth.mailaddress = #{mailAddress}
+	</select>
+	
+	<resultMap type="Employee" id="Employees">
+		<id column="employee_id" property="employeeId"/>
+		<result column="name" property="name"/>
+		<result column="join_date" property="joinDate"/>
+		<result column="job_category_id" property="jobCategoryId"/>
+		<collection property="authInfo" ofType="AuthInfo">
+			<id column="employee_id" property="employeeId"/>
+			<result column="password" property="password"/>
+			<result column="mailaddress" property="mailAddress"/>
+			<result column="authority_id" property="authorityId"/>
+			<result column="job_cat_name" property="jobCategoryName"/>
+		</collection>
+	</resultMap>
+	
+	<select id="findJobCategory" resultType="JobCategory">
+	SELECT job_category_id, name FROM job_categories;
+	</select>
+	
+	<select id="findAll" resultMap="Employees">
+	SELECT
+		emp.employee_id AS employee_id,
+		emp.name AS name,
+		emp.join_date AS join_date,
+		auth.password AS password,
+		auth.mailaddress AS mailaddress,
+		auth.authority_id AS authority_id,
+		job_cat.job_category_id,
+		job_cat.name AS job_cat_name
+	FROM
+		employees AS emp
+	INNER JOIN
+		auth_info AS auth
+	ON
+		auth.employee_id = emp.employee_id
+	INNER JOIN
+		job_categories AS job_cat 
+	ON
+		emp.job_category_id = job_cat.job_category_id
+	<where>
+		<if test="date != null and date != '' and date != 'ALL'">
+			emp.join_date = to_date(#{date},'YYYY/MM/DD')
+		</if>
+		<if test="engineer != null and engineer != '全エンジニア'">
+			and job_cat.name = #{engineer}
+		</if>
+	</where>
+	ORDER BY
+		job_cat.job_category_id
+		,emp.join_date
+		<if test="type != 'JOINDATE_OLD'">
+			DESC
+		</if>
+	</select>
+	
+ 	<insert id="insertEmployee">
+	WITH employees_id AS(
+		INSERT INTO employees
+			(name,join_date,job_category_id)
+		VALUES
+			(#{employee.name},#{employee.joinDate},#{employee.jobCategoryId})
+	RETURNING employee_id AS id)
+	INSERT INTO	auth_info
+		(employee_id,password,mailaddress,authority_id)
+		SELECT id,#{employee.authInfo.password},#{employee.authInfo.mailAddress},#{employee.authInfo.authorityId}
+	FROM employees_id
+	</insert>
+</mapper>

@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.QuestionnaireMapper">
+	<!-- アンケートを検索する -->
+	<select id="findQuestionnaire" resultMap="Questionnaires">
+		SELECT
+			ques.question_id AS question_id
+			,ques.description AS description
+			,ques.title AS title
+			,ques_tar.job_category_id AS job_cat_id
+			,ques_sta.question_status_id AS ques_sta_id
+			,ques_sta.created_at AS cre_at
+			,ques_sta.updated_at AS up_at
+			,ques_sta.deleted AS deleted
+			<if test="type=='reply'">
+			,parent_ques_cat.category_id AS parentCategoryId
+			,parent_ques_cat.name AS parentName
+			,child_ques_cat.category_id AS childCategoryId
+			,child_ques_cat.name AS childName
+			,ans.question_id AS ans_question_id
+			,ans.employee_id AS ans_employee_id
+			,ans.parent_category_id AS ans_parent_category_id
+			,ans.child_category_id AS ans_child_category_id
+			,ans.point AS point
+			</if>
+		FROM
+			questions AS ques
+		INNER JOIN
+			question_status AS ques_sta
+		ON
+			ques.question_id = ques_sta.question_id
+		INNER JOIN
+			question_targets AS ques_tar
+		ON
+			ques.question_id = ques_tar.question_id
+		<if test="type=='reply'">
+		INNER JOIN
+			question_categories AS parent_ques_cat
+		ON
+			parent_ques_cat.question_id = ques.question_id
+		INNER JOIN
+			question_categories AS child_ques_cat
+		ON
+			child_ques_cat.parent_id = parent_ques_cat.category_id
+		LEFT OUTER JOIN
+			answers AS ans
+		ON
+			child_ques_cat.category_id = ans.child_category_id
+		AND
+			ans.employee_id = #{employee.employeeId}
+		</if>
+		<if test="type=='ANSWERED_NEW'
+			or type=='ANSWERED_OLD' 
+			or type=='NOT_ANSWERED_NEW' 
+			or type=='NOT_ANSWERED_OLD'">
+		LEFT OUTER JOIN
+			answers AS ans
+		ON
+			ques.question_id = ans.question_id
+		</if>
+		<if test="type=='ANSWERED_OLD'
+			 or type=='ANSWERED_NEW'
+			 or type=='NOT_ANSWERED_NEW' 
+			 or type=='NOT_ANSWERED_OLD'">
+		GROUP BY
+			ques.question_id,ques.title,ques.description,ques_tar.job_category_id,ques_sta.question_status_id,ans.employee_id,ans.created_at,ans.question_id
+		HAVING
+			ques_tar.job_category_id =#{employee.jobCategoryId}
+		AND
+			ans.question_id IS NOT NULL
+		AND
+			employee_id = #{employee.employeeId}
+		<if test="authority=='ROLE_USER'">
+			AND
+				ques_sta.deleted = false
+		</if>
+		</if>
+		<where>
+			<if test="type!='reply'
+			 and type!='ANSWERED_OLD'
+			 and type!='ANSWERED_NEW'
+			 and type!='NOT_ANSWERED_NEW' 
+			 and type!='NOT_ANSWERED_OLD' 
+			 and authority=='ROLE_USER'">
+				ques_tar.job_category_id = #{employee.jobCategoryId}
+			AND
+				ques_sta.deleted = false
+			</if>
+			<if test="type=='reply'">
+			AND 
+				ques.question_id = #{id}
+			</if>
+		</where>
+		<if test="type!='reply'">
+		ORDER BY
+			<if test="type!='OLD' and type!='ANSWERED_OLD' and type!='NOT_ANSWERED_OLD'">
+			ques_sta.created_at DESC
+			</if>
+			<if test="type=='OLD' or type=='ANSWERED_OLD' or type=='NOT_ANSWERED_OLD'">
+			ques_sta.created_at
+			</if>
+		</if>
+		<if test="type=='reply'">
+		ORDER BY
+			parent_ques_cat.category_id,child_ques_cat.category_id
+		</if>
+	</select>
+	<resultMap type="Questionnaire" id="Questionnaires">
+		<id column="question_id" property="questionnaireId"/>
+		<result column="title" property="title"/>
+		<result column="description" property="description"/>
+		<collection property="questionnaireTargetList" ofType="Integer">
+			<result column="job_cat_id"/>
+		</collection>
+		<collection property="questionnaireStatus" ofType="QuestionnaireStatus">
+			<id column="ques_sta_id" property="questionnaireStatusId"/>
+			<result column="cre_at" property="createdAt"/>
+			<result column="up_at" property="updatedAt"/>
+			<result column="deleted" property="deleted"/>
+		</collection>
+		<collection property="questionnaireCategoryList" ofType="QuestionnaireCategory">
+			<id column="parentCategoryId" property="questionnaireCategoryId"/>
+			<result column="parentName" property="parentName"/>
+			<collection property="childNameList" ofType="QuestionnaireCategory">
+				<result column="childCategoryId" property="questionnaireCategoryId"/>
+				<result column="childName" property="parentName"/>
+			</collection>
+		</collection>
+		<collection property="answer" ofType="Answer">
+			<result column="ans_question_id" property="questionId"/>
+			<result column="ans_employee_id" property="employeeId"/>
+			<collection property="answerCategoryList" ofType="AnswerCategory">
+				<result column="ans_parent_category_id" property="parentCategoryId"/>
+				<collection property="answerPointList" ofType="AnswerPoint">
+					<result column="ans_child_category_id" property="childCategoryId"/>
+					<result column="point" property="point"/>
+				</collection>
+			</collection>
+		</collection>
+	</resultMap>
+	
+	<select id="findAnswer" resultMap="Answers">
+	SELECT
+		ans.question_id AS question_id,
+		ques.title AS title,
+		ans.parent_category_id AS parent_category_id,
+		parent_ques_cat.name AS parent_name,
+		ans.child_category_id AS child_category_id,
+		child_ques_cat.name AS child_name,
+	<if test="type=='point'">
+		ans.point,
+		count(point) OVER (PARTITION BY ans.child_category_id,ans.point) AS num_of_people,
+		AVG(SUM(point) * count(point)) OVER (PARTITION BY ans.child_category_id) AS avg_point,
+		COUNT(employee_id) OVER (PARTITION BY ans.child_category_id) AS total_people
+	</if>
+	<if test="type=='joinYear'">
+		AVG(ans.point) AS avg_point,
+		emp.join_date AS join_date
+	</if>
+	FROM
+		answers AS ans
+	INNER JOIN
+		questions AS ques
+	ON
+		ans.question_id = ques.question_id
+	INNER JOIN
+		question_categories AS child_ques_cat
+	ON
+		child_ques_cat.category_id = ans.child_category_id
+	INNER JOIN
+		question_categories AS parent_ques_cat
+	ON
+		parent_ques_cat.category_id = child_ques_cat.parent_id
+	<if test="type=='joinYear'">
+	INNER JOIN
+		employees AS emp
+	ON
+		emp.employee_id = ans.employee_id
+	</if>
+	<if test="type=='point'">
+	GROUP BY
+		ans.question_id,ques.title,ans.parent_category_id,parent_ques_cat.name,ans.child_category_id,child_ques_cat.name,ans.point,employee_id
+	</if>
+	<if test="type=='joinYear'">
+	GROUP BY
+		emp.join_date,ans.question_id,ans.child_category_id,ques.title,ans.parent_category_id,parent_ques_cat.name,child_ques_cat.name
+	</if>
+	HAVING
+		ans.question_id = #{id}
+	ORDER BY
+	<if test="type=='joinYear'">
+		emp.join_date DESC,
+	</if>
+		ans.parent_category_id,ans.child_category_id
+	<if test="type=='point'">
+		,ans.point
+	</if>
+	</select>
+	
+	<resultMap type="Questionnaire" id="Answers">
+		<id column="question_id" property="questionnaireId"/>
+		<result column="title" property="title"/>
+		<collection property="questionnaireCategoryList" ofType="QuestionnaireCategory">
+			<result column="parent_category_id" property="questionnaireCategoryId"/>
+			<result column="parent_name" property="parentName"/>
+			<collection property="childNameList" ofType="QuestionnaireCategory">
+				<result column="child_category_id" property="questionnaireCategoryId"/>
+				<result column="child_name" property="parentName"/>
+			</collection>
+		</collection>
+		<collection property="answer" ofType="Answer">
+			<result column="question_id" property="questionId"/>
+			<collection property="answerCategoryList" ofType="AnswerCategory">
+				<result column="parent_category_id" property="parentCategoryId"/>
+				<result column="join_date" property="respondentJoinDate"/>
+				<collection property="answerPointList" ofType="AnswerPoint">
+					<result column="child_category_id" property="childCategoryId"/>
+					<result column="point" property="point"/>
+					<result column="num_of_people" property="numOfPeople"/>
+					<result column="avg_point" property="avgPoint"/>
+				</collection>
+			</collection>
+		</collection>
+	</resultMap>
+	
+	<select id="findAllEmployeeAnswer" resultMap="EmployeeAnswers">
+		SELECT
+			emp.employee_id AS employee_id,
+			emp.name AS name,
+			emp.join_date AS join_date,
+			ans.question_id AS question_id,
+			ques.title AS title,
+			ans.parent_category_id AS parent_category_id,
+			parent_cat.name AS parent_cat_name,
+			ans.child_category_id AS child_category_id,
+			child_cat.name AS child_cat_name,
+			ans.point AS point
+		FROM
+			employees AS emp 
+		INNER JOIN
+			answers AS ans
+		ON
+			emp.employee_id = ans.employee_id
+		INNER JOIN
+			questions AS ques
+		ON
+			ques.question_id = ans.question_id
+		INNER JOIN
+			question_categories AS parent_cat
+		ON
+			parent_cat.category_id = ans.parent_category_id
+		INNER JOIN
+			question_categories AS child_cat
+		ON
+			child_cat.category_id = ans.child_category_id
+		<where>
+			ques.question_id = #{id}
+		<if test="date!='all'">
+		AND
+			emp.join_date = to_date(#{date},'YYYY/MM/DD')
+		</if>
+		</where>
+		ORDER BY
+			emp.join_date DESC,emp.employee_id,parent_cat.category_id,child_cat.category_id
+	</select>
+	
+	<insert id="insertAnswered">
+		INSERT INTO answers
+			(question_id,employee_id,parent_category_id,child_category_id,point,created_at)
+		VALUES
+		<foreach collection="answered.answerCategoryList" item="answerCategory" separator=",">
+			<foreach collection="answerCategory.answerPointList" item="answerPoint" separator=",">
+				(#{answered.questionId},#{answered.employeeId},#{answerCategory.parentCategoryId},#{answerPoint.childCategoryId},#{answerPoint.point},current_timestamp)
+			</foreach>
+		</foreach>
+		;
+	</insert>
+	
+	<!-- アンケートの解答を更新する -->
+ 	<update id="updateAnswered">
+ 		INSERT INTO old_answers
+ 			(answer_id,question_id,employee_id,parent_category_id,child_category_id,point,created_at)
+ 		SELECT
+ 			answer_id
+ 			,question_id
+ 			,employee_id
+ 			,parent_category_id
+ 			,child_category_id
+ 			,point
+ 			,created_at
+ 		FROM
+ 			answers
+ 		WHERE
+ 			question_id = #{answered.questionId}
+ 		AND
+ 			employee_id = #{answered.employeeId}
+ 		ORDER BY
+ 			created_at,answer_id;
+ 			
+ 		UPDATE
+ 			answers
+ 		SET point =
+			CASE
+			<foreach collection="answered.answerCategoryList" item="answerCategory">
+				<foreach collection="answerCategory.answerPointList" item="answerPoint">
+					WHEN child_category_id = #{answerPoint.childCategoryId} THEN #{answerPoint.point}
+				</foreach>
+			</foreach>
+				ELSE point
+			END,
+			created_at = current_timestamp
+		WHERE
+			child_category_id
+		IN 
+			(
+			<foreach collection="answered.answerCategoryList" item="answerCategory" separator=",">
+ 				<foreach collection="answerCategory.answerPointList" item="answerPoint" separator=",">
+					#{answerPoint.childCategoryId}
+				</foreach>
+			</foreach>
+			)
+		AND
+			employee_id = #{answered.employeeId}
+		AND
+			question_id = #{answered.questionId};
+	</update>
+	
+	<!-- アンケートを登録 -->
+	<insert id="insertQuestionnaire">
+	WITH questions AS (
+		INSERT INTO questions
+			(title,description)
+		VALUES
+			(#{questionnaire.title},#{questionnaire.description})
+		RETURNING question_id),
+	question_status AS (
+		INSERT INTO question_status
+			(question_id,created_at,updated_at,deleted)
+		SELECT question_id,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,false FROM questions
+		RETURNING question_status_id),
+	question_targets AS(
+		INSERT INTO question_targets
+			(question_id,job_category_id)
+	<foreach collection="questionnaire.questionnaireTargetList" item="questionnaireTarget" index="index1" separator="UNION ALL">
+		SELECT question_id,#{questionnaireTarget} FROM questions
+	</foreach>
+		RETURNING question_targets_id),
+	questionnaire_categories AS(
+		INSERT INTO question_categories
+			(question_id,name)
+	<foreach collection="questionnaire.questionnaireCategoryList" item="questionnaireCategory" index="index2" separator="UNION ALL">
+		SELECT question_id,#{questionnaireCategory.parentName} FROM questions
+	</foreach>
+		RETURNING question_id,category_id,name)
+		INSERT INTO question_categories
+			(question_id,parent_id,name)
+	<foreach collection="questionnaire.questionnaireCategoryList" item="questionnaireCategory" index="index3" separator="UNION ALL">
+		<foreach collection="questionnaireCategory.childNameList" item="childName" index="index4" separator="UNION ALL">
+			SELECT question_id,category_id,#{childName.parentName} FROM questionnaire_categories WHERE #{questionnaireCategory.parentName} = name
+		</foreach>
+	</foreach>
+	;
+	</insert>
+	<select id="findMyAnswer" resultMap="EmployeeAnswers">
+	SELECT
+		ans.employee_id AS employee_id,
+		emp.name AS name,
+		ans.question_id AS question_id,
+		ques.title AS title,
+		auth.mailAddress AS mailAddress,
+		job_cat.job_category_id AS job_category_id,
+		job_cat.name AS job_category_name,
+		authority.authority_id AS authority_id,
+		authority.name AS authority_name,
+		emp.join_date AS join_date
+	FROM (SELECT
+		question_id,
+		employee_id,
+		created_at 
+	FROM 
+		answers
+	GROUP BY
+		question_id,employee_id,created_at
+	HAVING
+		employee_id = #{id}
+	UNION ALL 
+	SELECT
+		question_id,
+		employee_id,
+		created_at 
+	FROM 
+		old_answers
+	GROUP BY
+		question_id,employee_id,created_at
+	HAVING
+		employee_id = #{id}) AS ans
+	INNER JOIN
+		questions AS ques
+	ON
+		ques.question_id = ans.question_id
+	INNER JOIN
+		auth_info AS auth
+	ON
+		auth.employee_id = ans.employee_id
+	INNER JOIN
+		employees AS emp
+	ON
+		emp.employee_id = ans.employee_id
+	INNER JOIN
+		job_categories AS job_cat
+	ON
+		job_cat.job_category_id = emp.job_category_id
+	INNER JOIN
+		authorities AS authority
+	ON
+		authority.authority_id = auth.authority_id
+	ORDER BY
+		ans.created_at DESC
+	</select>
+	
+	<resultMap type="Employee" id="EmployeeAnswers">
+		<id column="employee_id" property="employeeId"/>
+		<result column="name" property="name"/>
+		<result column="join_date" property="joinDate"/>
+		<collection property="authInfo" ofType="AuthInfo">
+			<id column="employee_id" property="employeeId"/>
+			<result column="mailAddress" property="mailAddress"/>
+			<result column="authority_id" property="authorityId"/>
+			<result column="authority_name" property="authorityName"/>
+			<result column="job_category_name" property="jobCategoryName"/>
+		</collection>
+		<collection property="answer" ofType="Answer">
+			<result column="question_id" property="questionId"/>
+			<result column="employee_id" property="employeeId"/>
+			<collection property="answerCategoryList" ofType="AnswerCategory">
+				<id column="parent_category_id" property="parentCategoryId"/>
+				<collection property="answerPointList" ofType="AnswerPoint">
+					<id column="child_category_id" property="childCategoryId"/>
+					<result column="point" property="point"/>
+				</collection>
+			</collection>
+			<collection property="questionnaire" ofType="Questionnaire">
+				<id column="quesetion_id" property="questionnaireId"/>
+				<result column="title" property="title"/>
+			</collection>
+		</collection>
+	</resultMap>
+	
+	
+	<select id="viewQuestionnaire" resultType="boolean">
+	WITH delete AS (UPDATE
+		question_status
+	SET
+		deleted = 
+		CASE
+			WHEN deleted = true THEN false
+			ELSE true
+		END
+	WHERE
+		question_id = #{id}
+	RETURNING
+		deleted)
+	SELECT
+		deleted
+	FROM
+		delete;
+	</select>
+</mapper>

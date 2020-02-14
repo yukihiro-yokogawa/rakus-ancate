@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="csrf-token" th:content ="${_csrf.token}">
+<title>ラクスパートナーズ 研修生アンケ―トシステム</title>
+<link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" >
+<link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}" >
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/dot-luv/jquery-ui.css" >
+</head>
+<body>
+	<div class="container">
+		<nav th:include="header/header.html::navbar" class="navbar navbar-default"></nav>
+		
+		<!-- パンくずリスト -->
+		<ol class="breadcrumb">
+			<li class="active">
+				<a href="list.html" th:href="@{/questionnaire/list}">アンケートリスト</a>/
+				<a href="list.html" th:href="@{info}">管理者用インフォメーション</a>/
+				<span class="active">管理者用アンケートリスト</span>
+			</li>
+		</ol>
+		
+		<div class="row">
+			<div
+				class="table-responsive col-lg-offset-2 col-lg-8 col-md-offset-2 col-md-8 col-sm-12 col-xs-12">
+				<form th:action="@{/admin/info}">
+					<select class="select" id="type" name="type">
+						<option th:unless="${#strings.contains(sortType.key,'ANSWERED')}" th:each="sortType:${sortMap}" th:value="${sortType.key}" th:text="${sortType.value}" th:selected="${#strings.toString(sortType.key) == sort}">
+					</select>
+					<button class="btn-flat-border">検索</button>
+				</form>
+
+<!-- ここから上を編集する必要はありません -->
+
+<!-- ここにモックのtable要素を貼り付けます -->
+
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>アンケート名</th>
+							<th>登録日</th>
+							<th>更新日</th>
+							<th>表示</th>
+							<th>削除</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="questionnaire,questionnaireStat:${questionnaireList}">
+							<td>
+								<span th:text="${questionnaire.title}">java</span>
+							</td>
+							<td>
+								<span th:text="${questionnaire.questionnaireStatus.createdAtStr}">2016/12/1</span>
+							</td>
+							<td>
+								<span th:text="${questionnaire.questionnaireStatus.updatedAtStr}">2016/12/3</span>
+							</td>
+							<td>
+								<span><button th:id="questionnaire_review[__${questionnaireStat.index}__]" class="btn-review-border" th:data-question_id="${questionnaire.questionnaireId}" th:unless="${questionnaire.questionnaireStatus.deleted}">非表示</button></span>
+								<span><button th:id="questionnaire_review[__${questionnaireStat.index}__]" class="btn-view-border" th:data-question_id="${questionnaire.questionnaireId}" th:if="${questionnaire.questionnaireStatus.deleted}">表示</button></span>
+							</td>
+							<td>
+								<span><button id="questionnaire_perfect_delete" class="btn-delete-border">削除</button></span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+
+<!-- ここから下を編集する必要はありません -->
+
+			</div>
+		</div>
+	</div>
+</body>
+<script src="../../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script th:src="@{/js/administrator_questionnaire.js}"></script>
+</html>

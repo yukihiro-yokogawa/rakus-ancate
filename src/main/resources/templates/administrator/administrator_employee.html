@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="csrf-token" th:content ="${_csrf.token}">
+<title>ラクスパートナーズ 研修生アンケ―トシステム</title>
+<link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" >
+<link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}" >
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/dot-luv/jquery-ui.css" >
+</head>
+<body>
+	<div class="container">
+		<nav th:include="header/header.html::navbar" class="navbar navbar-default"></nav>
+		
+		<!-- パンくずリスト -->
+		<ol class="breadcrumb">
+			<li class="active">
+				<a href="list.html" th:href="@{/questionnaire/list}">アンケートリスト</a>/
+				<a href="list.html" th:href="@{info}">管理者用インフォメーション</a>/
+				<span class="active">管理者用従業員リスト</span>
+			</li>
+		</ol>
+		<div class="row">
+			<div
+				class="col-lg-offset-2 col-lg-8 col-md-offset-2 col-md-8 col-sm-12 col-xs-12">
+				<form th:action="@{/admin/employee}">
+					<select class="select" name="type">
+						<option th:each="sortType:${sortMap}" th:value="${sortType.key}" th:text="${sortType.value}" th:selected="${#strings.toString(sortType.key) == sort}">
+					</select>
+					<select class="select" name="engineer">
+						<option th:each="engineer:${engineerMap}" th:value="${engineer.value}" th:text="${engineer.value}" th:selected="${#strings.toString(engineer.value) == engineerType}">
+					</select>
+					<select class="select" name="joinDate">
+						<option th:each="joinDate:${joinDateMap}" th:value="${joinDate.key}" th:text="${joinDate.value}" th:selected="${#strings.toString(joinDate.key) == joinEmployee}">
+					</select>
+					<button class="btn-flat-border">検索</button>
+				</form>
+				<!-- table -->
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>氏名</th>
+							<th>入社年</th>
+							<th>エンジニア</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="employee,employeeStat:${employeeList}">
+							<td>
+								<a th:href="@{employee_detail(id=${employee.employeeId})}" th:text="${employee.name}">氏名</a>
+							</td>
+							<td>
+								<span th:text="${employee.joinDate}">入社年</span>
+							</td>
+							<td>
+								<span th:text="${employee.authInfo.jobCategoryName}">エンジニア</span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+<script src="../../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script th:src="@{/js/administrator_questionnaire.js}"></script>
+</html>

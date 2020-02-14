@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja"
+	xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ラクスパートナーズ 研修生アンケ―トシステム</title>
+<link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" >
+<link rel="stylesheet" href="../../static/css/style.css" th:href="@{/css/style.css}" >
+</head>
+<body>
+	<div class="container">
+		<nav th:fragment="navbar" class="navbar navbar-default">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed"
+						data-toggle="collapse" data-target="#bs-example-navbar-collapse-1"
+						aria-expanded="false">
+						<span class="sr-only">Toggle navigation</span> <span
+							class="icon-bar"></span> <span class="icon-bar"></span> <span
+							class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand"  th:href="@{/questionnaire/list}" href="list.html">
+						<!-- 企業ロゴ -->
+						<img src="../../static/img/header_logo_small.png" th:src="@{/img/img_logo.png}">
+					</a>
+				</div>
+
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse"
+					id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav navbar-right">
+						<li sec:authorize="hasRole('ROLE_ADMIN')">
+							<a href="insert.html" th:href="@{/questionnaire/create}">アンケート登録</a></li>
+						<li sec:authorize="hasRole('ROLE_ADMIN')">
+							<a href="administrator_page" th:href="@{/admin/info}">管理者ページ</a>
+						<li sec:authorize="!hasRole('ROLE_USER')">
+							<a href="login.html" th:href="@{/employee/toLogin}">ログイン</a>
+						<li sec:authorize="hasRole('ROLE_USER')">
+							<a href="update.html" th:href="@{/employee/mypage(id=${session.id})}">ユーザーページ</a>
+						<li sec:authorize="hasRole('ROLE_USER')">
+							<a href="logout.html" th:href="@{/logout}">ログアウト</a>
+					</ul>
+				</div>
+				<!-- /.navbar-collapse -->
+			</div>
+			<!-- /.container-fluid -->
+		</nav>
+		<div id="chartContainer" style="height: 370px; width: 100%;"></div>
+		<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+	</div>
