@@ -40,8 +40,7 @@ public class SortType {
 	 *
 	 */
 	protected enum SORT_TYPE_QUESTIONNAIRE{
-		ALL("全件"),
-		NEW("登録が新しい順"),
+		ALL("登録が新しい順"),
 		OLD("登録が古い順"),
 		ANSWERED_NEW("回答済み（新）"),
 		ANSWERED_OLD("回答済み（古）"),
@@ -67,8 +66,7 @@ public class SortType {
 	 */
 	protected enum SORT_TYPE_EMPLOYEE{
 		
-		EMPLOYEE_ALL("全件"),
-		JOINDATE_NEW("入社年順（新）"),
+		EMPLOYEE_ALL("入社年順（新）"),
 		JOINDATE_OLD("入社年順（古）");
 		
 		private String sortType;

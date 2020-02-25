@@ -36,19 +36,17 @@
 						<li sec:authorize="hasRole('ROLE_ADMIN')">
 							<a href="insert.html" th:href="@{/questionnaire/create}">アンケート登録</a></li>
 						<li sec:authorize="hasRole('ROLE_ADMIN')">
-							<a href="administrator_page" th:href="@{/admin/info}">管理者ページ</a>
-						<li sec:authorize="!hasRole('ROLE_USER')">
-							<a href="login.html" th:href="@{/employee/toLogin}">ログイン</a>
+							<a href="administrator_page" th:href="@{/admin/info}">管理者ページ</a></li>
+						<li sec:authorize ifNotGranted="ROLE_USER">
+							<a href="login.html" th:href="@{/employee/toLogin}">ログイン</a></li>
 						<li sec:authorize="hasRole('ROLE_USER')">
-							<a href="update.html" th:href="@{/employee/mypage(id=${session.id})}">ユーザーページ</a>
+							<a href="update.html" th:href="@{/employee/mypage(id=${session.id})}">ユーザーページ</a></li>
 						<li sec:authorize="hasRole('ROLE_USER')">
-							<a href="logout.html" th:href="@{/logout}">ログアウト</a>
+							<a href="logout.html" th:href="@{/logout}">ログアウト</a></li>
 					</ul>
 				</div>
 				<!-- /.navbar-collapse -->
 			</div>
 			<!-- /.container-fluid -->
 		</nav>
-		<div id="chartContainer" style="height: 370px; width: 100%;"></div>
-		<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
 	</div>

@@ -88,4 +88,14 @@
 		SELECT id,#{employee.authInfo.password},#{employee.authInfo.mailAddress},#{employee.authInfo.authorityId}
 	FROM employees_id
 	</insert>
+
+	<update id="updatePassword">
+	UPDATE
+		auth_info
+	SET
+		password = #{password}
+	WHERE
+		employee_id = #{id}
+	</update>
+
 </mapper>

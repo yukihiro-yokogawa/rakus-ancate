@@ -6,8 +6,8 @@ var agreegate;
 var myChart;
 //グラフの結果を表形式で表示し、且つグラフに映らないでデータ全てを表示する.
 var grid = canvasDatagrid();
-
 var employee_grid =  canvasDatagrid();
+
 
 //個々のアンケート結果を入社日別に表示する際に日付を格納する.
 var date = "all";
@@ -248,8 +248,8 @@ function agreegate(answer,type){
 			}
 			dataset.push(data)
 		}
-		grid.data = dataset;
 		document.getElementById("canvas_data_grid").appendChild(grid);
+		grid.data = dataset;
 	}else if(answer["noAnswer"] == null&&type==="joinYear" && del == "true"){
 		var thisYear = new Date().getFullYear();
 		var datasets = [];
@@ -349,12 +349,12 @@ function agreegate(answer,type){
 			}
 			dataset.push(data)
 		}
-		grid.data = dataset;
 		document.getElementById("canvas_data_grid").appendChild(grid);
+		grid.data = dataset;
 	}
-	
-	
+
 	if(answer["employeeAnswers"] != null && research == "true"){
+		console.log("test3")
 		document.getElementById("employee_error").style.display = "none";
 		document.getElementById("canvas_personal_data_grid").style.display = "block"
 		document.getElementById("exportPersonGraph").style.display = "inline-block";
@@ -374,10 +374,10 @@ function agreegate(answer,type){
 			})
 			dataset.push(data);
 		}
-		employee_grid.data = dataset;
 		document.getElementById("canvas_personal_data_grid").appendChild(employee_grid);
+		employee_grid.data = dataset;
 	}
-	
+
 }
 
 //CSVファイルを出力

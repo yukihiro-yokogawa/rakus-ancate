@@ -14,7 +14,7 @@ public class Answer {
 	Integer employeeId;
 	
 	List<AnswerCategory> answerCategoryList;
-	
+
 	Questionnaire questionnaire;
 
 }

@@ -73,9 +73,29 @@ public class EmployeeService {
 		employee.setJoinDate(joinDate);
 		employeeMapper.insertEmployee(employee);
 	}
-	
+
+	/**
+	 * ユーザー一覧を表示するメソッドです。
+	 * typeに入る値によって、全ユーザー、入社年、エンジニア種別でソートできます.
+	 *
+	 * @param date 入社年月
+	 * @param type 検索条件
+	 * @param engineer エンジニア種別
+	 * @return 全ユーザーの一覧
+	 */
 	public List<Employee> findAll(String date,String type,String engineer){
 		return employeeMapper.findAll(date, type, engineer);
+	}
+
+	/**
+	 * パスワードを更新するメソッドです.
+	 *
+	 * @param id
+	 * @param password
+	 */
+	public void updatePassword(Integer id, String password){
+		String encodePassword = passwordEncoder.encode(password);
+		employeeMapper.updatePassword(id,encodePassword);
 	}
 	
 }

@@ -41,5 +41,11 @@ public interface EmployeeMapper {
 	 * @return 検索された全従業員情報
 	 */
 	List<Employee> findAll(@Param("date") String date,@Param("type")String type,@Param("engineer")String engineer);
-	
-}
+
+	/**
+	 * パスワードの更新（全ユーザー用）
+	 *
+	 * @param id ログインしているユーザーのID
+	 * @param password 変更したいパスワード
+	 */
+	void updatePassword(@Param("id") Integer id, @Param("password") String password);}

@@ -25,7 +25,7 @@ public class Questionnaire {
 	List<QuestionnaireCategory> questionnaireCategoryList;
 	
 	Answer answer;
-	
+
 	/**
 	 * 検索してきたユーザーと紐づく回答をフォームに詰め治す。
 	 * 

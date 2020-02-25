@@ -87,5 +87,5 @@ public interface QuestionnaireMapper {
 	 * @return true or false
 	 */
 	boolean deleteQuestionnaire(@Param("id") Integer id);
-	
+
 }
