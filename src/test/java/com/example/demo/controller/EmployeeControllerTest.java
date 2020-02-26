@@ -1,20 +1,18 @@
 package com.example.demo.controller;
 
-import com.example.demo.domain.AuthInfo;
-import com.example.demo.domain.Employee;
 import com.example.demo.domain.JobCategory;
 import com.example.demo.domain.LoginEmployee;
 import com.example.demo.form.AuthInfoForm;
 import com.example.demo.form.EmployeeForm;
-import com.example.demo.form.PasswordChangeForm;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -26,6 +24,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.*;
 import org.springframework.validation.support.BindingAwareModelMap;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.time.LocalDate;
@@ -38,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 @Transactional
 @DisplayName("employeeControllerの")
 class EmployeeControllerTest {
@@ -45,9 +45,48 @@ class EmployeeControllerTest {
     @Autowired
     private EmployeeController employeeController;
 
+    @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private WebApplicationContext context;
+
+    private org.springframework.security.core.userdetails.User loggedUser;
+
     Model model = new BindingAwareModelMap();
+
+    @Test
+    @DisplayName("springsecurityのログイン処理が成功する時")
+    public void loginProcessSuccess() throws Exception {
+        mockMvc.perform(SecurityMockMvcRequestBuilders.formLogin("/login")
+                .user("mailAddress", "test@rakus-partners.co.jp")
+                .password("password", "mai6f9irunoa"))
+                .andExpect(status().is3xxRedirection());
+    }
+
+    @DisplayName("springsecurityのログイン処理が失敗する時:")
+    class error {
+
+        @Test
+        @DisplayName("メールアドレス")
+        public void loginProcessMailAddressError() throws Exception {
+            mockMvc.perform(SecurityMockMvcRequestBuilders.formLogin("/login")
+                    .user("mailAddress", "test@rakus-partners.co.jp")
+                    .password("password", "mi6f9irunoa"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/employee/toLogin?error=true"));
+        }
+
+        @Test
+        @DisplayName("パスワード")
+        public void loginProcessPasswrodError() throws Exception {
+            mockMvc.perform(SecurityMockMvcRequestBuilders.formLogin("/login")
+                    .user("mailAddress", "test@rakus-partners.co.jp")
+                    .password("password", "mi6f9irunoa"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrl("/employee/toLogin?error=true"));
+        }
+    }
 
     @Nested
     @DisplayName("各リクエストが正しく送れているかのテスト：")
@@ -57,17 +96,6 @@ class EmployeeControllerTest {
             mockMvc = MockMvcBuilders.standaloneSetup(employeeController).alwaysDo(log()).build();
         }
 
-        @Test
-        @DisplayName("認証されているユーザーでログインできるかどうか")
-        public void loginAdd(){
-            MvcResult mvcResult = mockMvc.perform(post("/employee/login")
-                    .param("mailAddress","test@rakus-partners.co.jp")
-                    .param("password","mai6f9irunoa"))
-                    .andExpect(status().is(200))
-                    .andExpect(redirectedUrl("/questionnaire/list"))
-                    .andReturn();
-        }
-
 
         @Test
         @DisplayName("パスワード変更完了処理")
@@ -75,7 +103,6 @@ class EmployeeControllerTest {
             ResultActions results = mockMvc.perform(post("/employee/change_finish"));
             results.andExpect(status().is(200));
         }
-
 
         @Test
         @DisplayName("ログイン画面")
@@ -96,38 +123,45 @@ class EmployeeControllerTest {
                     () -> assertNotNull(jobCategoryList, jobCategoryList.toString()),
                     () -> assertEquals(3, jobCategoryList.size()),
                     () -> jobCategoryList.forEach(l -> {
-                            switch (l.getJobCategoryId()) {
-                                case 1:
-                                    assertEquals("アプリ", l.getName(),"アプリエンジニア取得");
-                                    break;
-                                case 2:
-                                    assertEquals("インフラ", l.getName(),"インフラエンジニア取得");
-                                    break;
-                                case 3:
-                                    assertEquals("機械学習", l.getName(),"機械学習エンジニア取得");
-                                    break;
-                                default:
-                                    assertEquals("error",l.getName(),"新しくjobが追加されたか何かしらのエラーが出ています");
-                                    break;
+                                switch (l.getJobCategoryId()) {
+                                    case 1:
+                                        assertEquals("アプリ", l.getName(), "アプリエンジニア取得");
+                                        break;
+                                    case 2:
+                                        assertEquals("インフラ", l.getName(), "インフラエンジニア取得");
+                                        break;
+                                    case 3:
+                                        assertEquals("機械学習", l.getName(), "機械学習エンジニア取得");
+                                        break;
+                                    default:
+                                        assertEquals("error", l.getName(), "新しくjobが追加されたか何かしらのエラーが出ています");
+                                        break;
+                                }
                             }
-                        }
                     )
             );
         }
 
         @Test
+        @DisplayName("パスワード変更画面を表示")
+        public void passwordView() throws Exception {
+            mockMvc.perform(post("/employee/password_change"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
         @DisplayName("ユーザー登録処理が成功する時")
-        public void insertProcessTest() throws Exception{
-            MultiValueMap <String,String> map = new LinkedMultiValueMap<String,String>(){
+        public void insertProcessTest() throws Exception {
+            MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>() {
                 {
-                    put("authInfoForm.mailAddress",Collections.singletonList("test@rakus-partners.co.jp"));
+                    put("authInfoForm.mailAddress", Collections.singletonList("test@rakus-partners.co.jp"));
                     put("authInfoForm.password", Collections.singletonList("password"));
-                    put("authInfoForm.confirmPassword",Collections.singletonList("password"));
-                    put("authInfoForm.authorityId",Collections.singletonList("2"));
-                    put("joinYear",Collections.singletonList(String.valueOf(LocalDate.now().getYear())));
-                    put("joinMonth",Collections.singletonList(String.valueOf(LocalDate.now().getMonthValue())));
-                    put("name",Collections.singletonList("taro"));
-                    put("jobCategoryId",Collections.singletonList("1"));
+                    put("authInfoForm.confirmPassword", Collections.singletonList("password"));
+                    put("authInfoForm.authorityId", Collections.singletonList("2"));
+                    put("joinYear", Collections.singletonList(String.valueOf(LocalDate.now().getYear())));
+                    put("joinMonth", Collections.singletonList(String.valueOf(LocalDate.now().getMonthValue())));
+                    put("name", Collections.singletonList("taro"));
+                    put("jobCategoryId", Collections.singletonList("1"));
                 }
             };
             mockMvc.perform(post("/employee/insertProcess").params(map))
@@ -138,17 +172,17 @@ class EmployeeControllerTest {
 
         @Test
         @DisplayName("ユーザー登録処理が失敗する時")
-        public void insertProcessTestError() throws Exception{
-            MultiValueMap <String,String> map = new LinkedMultiValueMap<String,String>(){
+        public void insertProcessTestError() throws Exception {
+            MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>() {
                 {
-                    put("authInfoForm.mailAddress",Collections.singletonList("test@rakus-partners.co.jp"));
+                    put("authInfoForm.mailAddress", Collections.singletonList("test@rakus-partners.co.jp"));
                     put("authInfoForm.password", Collections.singletonList("password"));
-                    put("authInfoForm.confirmPassword",Collections.singletonList("not_confirm_password"));
-                    put("authInfoForm.authorityId",Collections.singletonList("2"));
-                    put("joinYear",Collections.singletonList("2021"));
-                    put("joinMonth",Collections.singletonList("1"));
-                    put("name",Collections.singletonList("taro"));
-                    put("jobCategoryId",Collections.singletonList("1"));
+                    put("authInfoForm.confirmPassword", Collections.singletonList("not_confirm_password"));
+                    put("authInfoForm.authorityId", Collections.singletonList("2"));
+                    put("joinYear", Collections.singletonList("2021"));
+                    put("joinMonth", Collections.singletonList("1"));
+                    put("name", Collections.singletonList("taro"));
+                    put("jobCategoryId", Collections.singletonList("1"));
                 }
             };
             MvcResult mvcResult = mockMvc.perform(post("/employee/insertProcess").params(map))
@@ -163,6 +197,14 @@ class EmployeeControllerTest {
         public void passwordChangeTest() throws Exception {
             ResultActions results = mockMvc.perform(post("/employee/password_change"));
             results.andExpect(status().is(200));
+        }
+
+        @Test
+        @WithMockUser(username="username", roles="USER")
+        public void test() throws Exception{
+            loggedUser = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication();
+            mockMvc.perform(post("/employee/mypage")
+                    .param("id","1"));
         }
     }
 
@@ -328,51 +370,4 @@ class EmployeeControllerTest {
 //            }
         }
     }
-
-    @Test
-    @DisplayName("ユーザー登録画面の表示が成功する時")
-    void responseTest() {
-        assertEquals("employee/insert.html", employeeController.toInsert(model));
-        assertNotNull(model.getAttribute("jobCategoryList"));
-    }
-
-    @Test
-    @DisplayName("ログイン画面の表示が成功する時")
-    void responseTopTest() {
-        assertEquals("employee/login.html", employeeController.toLogin());
-    }
-
-    @Test
-    @DisplayName("パスワード変更画面の表示が成功する時")
-    void responsePasswordChange() {
-        assertEquals("employee/login.html", employeeController.toLogin());
-    }
-
-//    @Nested
-//    @DisplayName("パスワード変更処理が")
-//    class springSecurityTestChecker{
-//
-//        PasswordChangeForm passwordChangeForm = new PasswordChangeForm();
-//        Employee employee = new Employee();
-//        AuthInfo authInfo = new AuthInfo();
-//        private BindingResult result = new BindException(passwordChangeForm, "PasswordChangeForm");
-//        @BeforeEach
-//        void setup(){
-//            authInfo.setMailAddress("test");
-//            authInfo.setPassword("test");
-//            passwordChangeForm.setPassword("test");
-//            passwordChangeForm.setChangePassword("test");
-//            passwordChangeForm.setMailAddress("test");
-//            passwordChangeForm.setChangeConfirmPassword("test");
-//        }
-//
-//        @Test
-//        @WithMockUser
-//        @DisplayName("errorになる")
-//        void error(){
-//            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//            LoginEmployee loginEmployee = new LoginEmployee(employee, (Collection<GrantedAuthority>) auth.getAuthorities());
-//            employeeController.updatePassword(passwordChangeForm,result,loginEmployee);
-//        }
-//    }
 }
