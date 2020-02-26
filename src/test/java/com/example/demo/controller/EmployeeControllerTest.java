@@ -58,12 +58,34 @@ class EmployeeControllerTest {
         }
 
         @Test
+        @DisplayName("認証されているユーザーでログインできるかどうか")
+        public void loginAdd(){
+            MvcResult mvcResult = mockMvc.perform(post("/employee/login")
+                    .param("mailAddress","test@rakus-partners.co.jp")
+                    .param("password","mai6f9irunoa"))
+                    .andExpect(status().is(200))
+                    .andExpect(redirectedUrl("/questionnaire/list"))
+                    .andReturn();
+        }
+
+
+        @Test
+        @DisplayName("パスワード変更完了処理")
+        public void changeFinishPasswordTest() throws Exception {
+            ResultActions results = mockMvc.perform(post("/employee/change_finish"));
+            results.andExpect(status().is(200));
+        }
+
+
+        @Test
+        @DisplayName("ログイン画面")
         public void toLoginTest() throws Exception {
             ResultActions results = mockMvc.perform(post("/employee/toLogin"));
             results.andExpect(status().is(200));//チェックできる（200は成功　200でなかったら失敗するようになっている）
         }
 
         @Test
+        @DisplayName("ユーザー登録画面")
         public void toInsertTest() throws Exception {
             MvcResult mvcResult = mockMvc.perform(post("/employee/toInsert"))
                     .andExpect(status().is(200))
@@ -94,6 +116,7 @@ class EmployeeControllerTest {
         }
 
         @Test
+        @DisplayName("ユーザー登録処理が成功する時")
         public void insertProcessTest() throws Exception{
             MultiValueMap <String,String> map = new LinkedMultiValueMap<String,String>(){
                 {
@@ -114,6 +137,7 @@ class EmployeeControllerTest {
         }
 
         @Test
+        @DisplayName("ユーザー登録処理が失敗する時")
         public void insertProcessTestError() throws Exception{
             MultiValueMap <String,String> map = new LinkedMultiValueMap<String,String>(){
                 {
@@ -143,7 +167,7 @@ class EmployeeControllerTest {
     }
 
     @Nested
-    @DisplayName("ユーザー登録処理の")
+    @DisplayName("ユーザー登録処理のバリデーションチェック")
     class insertEmployee {
         private EmployeeForm employeeForm = new EmployeeForm();
         private AuthInfoForm authInfoForm = new AuthInfoForm();
