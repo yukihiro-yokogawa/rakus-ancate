@@ -120,7 +120,7 @@ public class EmployeeController {
 			if(!String.valueOf(employee.getEmployee().getEmployeeId()).equals(id)) {
 				throw new LoggedInUserIdNotMatchException("不正なユーザーIDでアクセスされた可能性があります。");
 			}
-			model.addAttribute("detail",questionnaireService.findMyAnswer(Integer.parseInt(id)));
+			model.addAttribute("detail",employeeService.findEmployee(employee.getEmployee().getAuthInfo().getMailAddress()));
 		}catch (LoggedInUserIdNotMatchException e) {
 			System.out.println(e.getMessage());//独自の例外です
 			System.out.println(e);

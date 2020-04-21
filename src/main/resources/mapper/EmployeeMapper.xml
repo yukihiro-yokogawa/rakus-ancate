@@ -11,13 +11,18 @@
 		emp.job_category_id AS job_category_id,
 		auth.password AS password,
 		auth.mailaddress AS mailaddress,
-		auth.authority_id AS authority_id
+		auth.authority_id AS authority_id,
+		job_cat.name AS job_cat_name
 	FROM
 		employees AS emp
 	INNER JOIN
 		auth_info AS auth
 	ON
 		emp.employee_id = auth.employee_id
+	INNER JOIN
+		job_categories AS job_cat
+	ON
+		job_cat.job_category_id = emp.job_category_id
 	WHERE
 		auth.mailaddress = #{mailAddress}
 	</select>
