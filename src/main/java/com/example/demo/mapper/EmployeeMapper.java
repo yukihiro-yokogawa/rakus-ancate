@@ -42,6 +42,8 @@ public interface EmployeeMapper {
 	 */
 	List<Employee> findAll(@Param("date") String date,@Param("type")String type,@Param("engineer")String engineer);
 
+	String findMailAddress(@Param("mailAddress") String mailAddress);
+
 	/**
 	 * パスワードの更新（全ユーザー用）
 	 *

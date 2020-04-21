@@ -82,7 +82,9 @@ public class EmployeeController {
 	@RequestMapping("/insertProcess")
 	public String insertProcess(@Validated EmployeeForm form, BindingResult result, Model model) {
 		LocalDate localDate = LocalDate.now();
-
+		if(employeeService.findMailAddress(form.getAuthInfoForm().getMailAddress()) != null) {
+			result.rejectValue("authInfoForm.mailAddress", "", "既に登録されているメールアドレスです。");
+		}
 		if(!form.getAuthInfoForm().getPassword().equals(form.getAuthInfoForm().getConfirmPassword())) {
 			result.rejectValue("authInfoForm.password", "","パスワード、又は確認用パスワードが間違っています。");
 		}
@@ -167,7 +169,7 @@ public class EmployeeController {
 		if(result.hasErrors()) {
 			return passwordChange();
 		}
-//		employeeService.updatePassword(authInfo.getEmployeeId(),form.getChangePassword());
+		employeeService.updatePassword(authInfo.getEmployeeId(),form.getChangePassword());
 		return "redirect:/employee/change_finish";
 	}
 

@@ -75,6 +75,15 @@
 			DESC
 		</if>
 	</select>
+
+	<select id="findMailAddress" resultType="String">
+		SELECT
+			mailaddress
+		FROM
+			auth_info
+		WHERE
+			mailaddress = #{mailAddress}
+	</select>
 	
  	<insert id="insertEmployee">
 	WITH employees_id AS(

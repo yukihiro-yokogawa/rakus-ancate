@@ -87,6 +87,10 @@ public class EmployeeService {
 		return employeeMapper.findAll(date, type, engineer);
 	}
 
+	public String findMailAddress(String mailAddress){
+		return employeeMapper.findMailAddress(mailAddress);
+	}
+
 	/**
 	 * パスワードを更新するメソッドです.
 	 *
