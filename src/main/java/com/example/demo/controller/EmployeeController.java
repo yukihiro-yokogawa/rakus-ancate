@@ -100,7 +100,7 @@ public class EmployeeController {
 		if(result.hasErrors()){
 			return toInsert(model);
 		}
-//		employeeService.insertEmployee(form);
+		employeeService.insertEmployee(form);
 		return "redirect:/employee/toLogin";
 	}
 	
